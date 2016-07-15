@@ -35,14 +35,6 @@ yum -y install kernel-headers  --disableexcludes=all
 
 mkdir -p /var/www
 
-cd /tmp && rm -fr wsu-platform
-cd /tmp && curl -o wsu-platform.zip -L https://github.com/washingtonstateuniversity/WSUWP-Platform/archive/master.zip
-cd /tmp && unzip wsu-platform.zip
-cd /tmp && mv WSUWP-Platform-master wsu-platform
-cp -fr /tmp/wsu-platform/pillar /srv/
-cp -fr /tmp/wsu-platform/www /var/
-
-cd /
 if [ ! -h /usr/sbin/gitploy ]; then
     curl  https://raw.githubusercontent.com/jeremyBass/gitploy/master/gitploy | sudo sh -s -- install
     [ -h /usr/sbin/gitploy ] || echoerr "gitploy failed install"
@@ -50,10 +42,15 @@ else
     gitploy update_gitploy
 fi
 
+#load up the main wordpress installer
 gitploy init 2>&1 | grep -qi "already initialized" && echo ""
-gitploy ls 2>&1 | grep -qi "platform" && gitploy up platform && gitploy re platform
-gitploy ls 2>&1 | grep -qi "platform" || gitploy clone -b master platform git@github.com:jeremyBass/wsu-platform-parts.git
+gitploy ls 2>&1 | grep -qi "wp_platform" && gitploy up wp_platform
+gitploy ls 2>&1 | grep -qi "wp_platform" || gitploy add -p /tmp/wsu-platform -b master wp_platform git@github.com:jeremyBass/jeremybass-wsuwp-platform.git
 
+cp -fr /tmp/wsu-platform/pillar /srv/
+cp -fr /tmp/wsu-platform/www /var/
+
+cd /
 
 mkdir -p /srv/pillar/
 mkdir -p /srv/pillar/config/
@@ -61,11 +58,18 @@ touch /srv/pillar/top.sls
 touch /srv/pillar/network.sls
 touch /srv/pillar/mysql.sls
 
+#load up custom parts
+gitploy init 2>&1 | grep -qi "already initialized" && echo ""
+gitploy ls 2>&1 | grep -qi "platform_parts" && gitploy up platform_parts && gitploy re platform_parts
+gitploy ls 2>&1 | grep -qi "platform_parts" || gitploy clone -b master platform_parts git@github.com:jeremyBass/jeremybass-platform-parts.git
+
+
 [ -d /tmp/wsu-web ] || mkdir -p /tmp/wsu-web
 
+#load up the wp core
 gitploy init 2>&1 | grep -qi "already initialized" && echo ""
-gitploy ls 2>&1 | grep -qi "wsu-web-provisioner" && gitploy up wsu_web_provisioner
-gitploy ls 2>&1 | grep -qi "wsu-web-provisioner" || gitploy add -p /tmp/wsu-web -b master wsu_web_provisioner https://github.com/washingtonstateuniversity/wsu-web-provisioner.git
+gitploy ls 2>&1 | grep -qi "wp_provisioner" && gitploy up wp_provisioner
+gitploy ls 2>&1 | grep -qi "wp_provisioner" || gitploy add -p /tmp/wsu-web -b master wp_provisioner git@github.com:jeremyBass/jeremybass-wp.git
 
 cp -fr /tmp/wsu-web/provision/salt /srv/
 cp /tmp/wsu-web/provision/salt/config/yum.conf /etc/yum.conf
