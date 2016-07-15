@@ -85,3 +85,15 @@ echo "wsuwp-prod" > /etc/salt/minion_id
 cp /tmp/wsu-web/provision/salt/minions/wsuwp.conf /etc/salt/minion.d/
 
 salt-call --local --log-level=info --config-dir=/etc/salt state.highstate
+
+
+
+#load up the wp core
+gitploy init 2>&1 | grep -qi "already initialized" && echo ""
+gitploy ls 2>&1 | grep -qi "wsuwp_plugins" && gitploy up wsuwp_plugins
+gitploy ls 2>&1 | grep -qi "wsuwp_plugins" || gitploy add -p /var/www/wp-content/plugins/ -b master wsuwp_plugins https://github.com/washingtonstateuniversity/WSUWP-Build-Plugins-Public.git
+
+#load up the wp core
+gitploy init 2>&1 | grep -qi "already initialized" && echo ""
+gitploy ls 2>&1 | grep -qi "wsuwp_themes" && gitploy up wsuwp_themes
+gitploy ls 2>&1 | grep -qi "wsuwp_themes" || gitploy add -p /var/www/wp-content/themes/ -b master wsuwp_themes https://github.com/washingtonstateuniversity/WSUWP-Build-Themes-Public.git
